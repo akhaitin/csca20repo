@@ -103,7 +103,7 @@ def spread(population, initial_infected, percent_vaccinated, days,
 		# and unexposed population on day i
 		if infected[i] > (population - recovered[i]):
 			infected[i] = population - recovered[i]
-	# return the paired lists that we generated along with the value for days
+	# return the paired lists that we generated so they can be graphed
 	return susceptible, infected, recovered
 
 #take use input and run it through the model, then call the function

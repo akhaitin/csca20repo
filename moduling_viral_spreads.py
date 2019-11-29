@@ -1,0 +1,152 @@
+''' This algorithm aims to model the dynamics of a virus spreading within a 
+population, using a few parameters imputted into the S-IR host-parasite model
+This model determines how the virus spreads among a population of susceptible 
+organisms (ones that can get infected) over time, based on:
+      - number of susceptible individuals
+      - transmission coefficient (number of susceptible individuals that one 
+	infected individual can infect)
+      - recovery per capita rate (how many infected individuals recover per
+        unit time
+The equations we will be using as the basis of our model are derived from
+the viral model equations present in 
+
+After modelling the behaviour of one virus with this algorithm, we can then 
+consider the behaviour of two viruses interacting. This can be modelled by 
+modifying the same data with two algorithms with the variables set to 
+different values (since not all viruses have the same values for transimission
+coefficient and recovery per capita rate). 
+
+The function that will calculate the spread of the virus and output arrays
+of susceptible, infected and recovered individuals'''
+
+# set the initial conditions as empty lists to allow outputs to function as 
+# paired lists
+susceptible = []
+infected = []
+recovered = []
+
+def spread(population, initial_infected, percent_vaccinated, days, 
+	   transmission_coefficient, recovery_rate):
+	'''(int, int, float, int, float, float) -> list, list, list
+	Return 3 ordered lists containing the number of susceptible, 
+	infected and recovered individuals, respectively
+	for each day in the range of the model according to the SIR
+	disease model.
+	REQ: 0 < initial infected < population
+	REQ: 1 < days
+	REQ: 0 <= percent_vaccinated <= 100
+	REQ: 0 < transmission_coefficient, recovery_rate < 1
+	>>> spread(50000, 2100, 5.5, 5, 0.00001, 0.007)
+	[45150, 44202, 42861, 40996, 38460, 35122], [2100, 3033, 4352, 6187, 8680, 11958],
+	[2750, 2765, 2786, 2816, 2859, 2920]
+	'''
+	#If lists aren't empty from a previous run, 
+	#clear the lists so we can start from scratch and make them each count
+	# from 0
+	#in correspondence with the day
+	if not susceptible == []: 
+		susceptible.clear()
+	if not infected == []:
+		infected.clear()
+	if not recovered == []:
+		recovered.clear()
+	# putting the initial number of infected in the 0th position of the 
+	# infected list
+	infected.append(int(initial_infected))
+	#classifying the vaccinated percentage of the population as recovered 
+	# for the sake of SIR model calculations
+	recovered.append(int(int(population) * 
+			     (float(percent_vaccinated) / 100)))
+	# subtracting infected and vaccinated from total population to get 
+	# susceptible population
+	susceptible.append(population - infected[0] - recovered[0])
+	# set the constants, which should be obtained from previous 
+	# literature/datasets
+	#to be used in SIR equations based on input data
+	b = float(transmission_coefficient)
+	m = float(recovery_rate)
+	# calculate density dependent SIR rate of changes for each day after the 
+	# 0th day
+	#and append susceptible, infected and recovered population values to 3
+	#respective lists of values for each day in the model past the 0th day
+	for i in range(1, int(days+1), 1):
+		# calculate the number of susceptibles on day i based on the 
+		# previous day
+		susceptible.append(round(susceptible[i-1] - 
+					 (b * susceptible[i-1] * 
+					  infected[i-1])))
+		# calculate the number of infected individuals on day i based on 
+		# the previous day
+		infected.append(round(infected[i-1] + 
+				      (b * susceptible[i-1] * infected[i-1]) - 
+				      (m * infected[i-1])))
+		# calculate the number of recovered individuals on day i based 
+		# on the previous day
+		recovered.append(round(recovered[i-1] + (m * infected[i-1])))
+		# if more susceptibles would be infected than there are 
+		# susceptibles, set susceptible[i] to 0 to avoid negative 
+		# individuals
+		if susceptible[i] < 0:
+			susceptible[i] = 0
+		# if more individuals would recover than there are infected 
+		# individuals, set infected[i] to 0 to prevent negative 
+		# individuals
+		if infected[i] < 0:
+			infected[i] = 0
+		# prevent recovered individuals from surpassing total population 
+		# due to rounding by setting recovered[i] to the population
+		if recovered[i] > population:
+			recovered[i] = population
+		# prevent more people from being infected than there are 
+		# susceptible individuals by setting infected[i] to unvaccinated 
+		# and unexposed population on day i
+		if infected[i] > (population - recovered[i]):
+			infected[i] = population - recovered[i]
+	# return the paired lists that we generated along with the value for days
+	return (susceptible, infected, recovered, days)
+
+
+# test inputs used for example:
+spr = spread(100, 2, 4, 50, 0.005, 0.1)
+
+''' Now to graph curves of recovered, susceptible, and infeced individuals over time
+REQ: paired lists generated (recovered, infected, susceptible) and days
+Expected output: Graph with 3 different coloured curves, legend, and labelled axes
+x-axis = Day
+y-axis = Number of Individuals'''
+
+# indicate which outputs of the spread function are representative of desired 
+# inputs to increase efficiency
+susceptible = spr[0]
+infected = spr[1]
+recovered = spr[2]
+days = spr[3]
+# print the outputs of spr to help visualize the result outside of the graph
+print (susceptible)
+print (infected)
+print (recovered)
+print (days)
+
+# import plotting function from matplotlibrary to allow for efficient 
+# generation of the graph
+import matplotlib.pyplot as plt
+
+# set range of x to a list equivalent in length to the paired lists generated 
+# with spread, so it can function as a paired list. x-values are the same for 
+# all data
+x = list(range(0, days+1))
+# plot each list on the scatter plot with visual parameters (label, colour, 
+# marker, marker size) specified to distinguish the curves (different colour)
+plt.scatter(x, infected, label= "Infected", color= "blue", marker= ".", s=50)
+plt.scatter(x, susceptible, label= "Susceptible", color= "red", marker= ".", s=50)
+plt.scatter(x, recovered, label= "Recovered", color= "green", marker= ".", s=50)
+# plot labels for graph axes as specified
+plt.xlabel('Day')
+plt.ylabel('Number of Individuals')
+plt.title('Viral Spread')
+# plot a legend to help identify which curve represents which output
+plt.legend()
+# show the graph in a new window so it can be explored and copied
+plt.show()
+
+
